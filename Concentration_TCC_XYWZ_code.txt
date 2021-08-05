@@ -1,0 +1,37 @@
+#Total contribution calculation Script
+
+from pcraster import *
+from pcraster.framework import *
+
+
+class MyFirstModel(DynamicModel):
+    def __init__(self):
+        DynamicModel.__init__(self)
+        setclone('CTsub4r.map') #cOncentration time of subbasin 2 #Correr en timeserie_distributionmap
+        
+
+    def initial(self):
+        self.points = self.readmap('points') #monitoring points 1,2,3,4
+        CTsub4 = self.readmap("CTsub4r")
+        MaxCTsub4= mapmaximum(CTsub4)
+        self.CTProportionSub4= CTsub4/MaxCTsub4
+        self.report(self.CTProportionSub4,"CTpropsub4")
+        self.landcovercontribSub4=self.readmap("lccontrsub4scalar") #landcover map with included weights yet
+        #landcovercontributionmap must been scalar from the beginning#
+              
+    def dynamic(self):
+        ConcX = timeinputscalar('concx.tss',self.points)
+        self.report(ConcX,'concx')
+        ConcX4 = ifthen(self.points == 4, ConcX)
+        ConcX4Glob = mapmaximum(ConcX4) #asigna la concentración a toda la subcuenca
+        self.report(ConcX4Glob,"concxd")
+        PropdistrX4 = (ConcX4Glob * self.CTProportionSub4) #proporción de la distribución del agroquimicos en ng/l 
+        self.report(PropdistrX4,"pcxd")
+        totalcontribXdsub4= (PropdistrX4 * self.landcovercontribSub4) #included landcover and distribution 
+        self.report(totalcontribXdsub4,"tcXdS4")
+        
+        
+nrOfTimeSteps = 8
+myModel = MyFirstModel()
+dynamicModel = DynamicFramework(myModel, nrOfTimeSteps)
+dynamicModel.run()

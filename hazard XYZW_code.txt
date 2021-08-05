@@ -1,0 +1,46 @@
+Created on Mon Feb  3 16:44:56 2020
+
+@author: Personal
+"""
+
+from pcraster import *
+from pcraster.framework import *
+
+
+class MyFirstModel(DynamicModel):
+    def __init__(self):
+        DynamicModel.__init__(self)
+        setclone('distancesubbasin4.map')
+        setglobaloption("unitcell")
+                 
+    def initial(self):
+        
+        self.points = self.readmap('points')
+        self.threshold=20.3653
+        self.overthreatSum=scalar(0)
+
+        
+    def dynamic(self):
+        #read dynamic maps form current folder and change point of samples in both variables
+        mapseries_tcxd=self.readmap("tcXdSd") #generar de nuevo todos los tcXiSi
+        mapseries_HQxd=self.readmap("G:\cuenca_palace\HQ calculation\HQXd")
+        maxx1=mapmaximum(mapseries_HQxd)
+        #multiply 
+        TTXd=mapseries_tcxd*maxx1
+        #report the result for each time
+        #self.report(TTXd,"TTxd")
+        overtrt=ifthenelse(TTXd>=self.threshold,boolean(1),boolean(0))
+        self.report(overtrt,"overtrt")
+        numberofTrueCells=ifthen(overtrt==1, areaarea(overtrt))
+        self.report(numberofTrueCells,"numtr")
+        #sum of boolean true 
+        self.overthreatSum=self.overthreatSum + scalar(overtrt)
+        self.report(self.overthreatSum,"sumXd")
+        #percentage of timesteps than a pixel was 1 until the current time step 
+        percOne=(self.overthreatSum/self.currentTimeStep())*100.0
+        self.report(percOne,"percxd")
+             
+nrOfTimeSteps = 8
+myModel = MyFirstModel()
+dynamicModel = DynamicFramework(myModel, lastTimeStep=8, firstTimestep=1)
+dynamicModel.run()

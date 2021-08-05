@@ -1,0 +1,31 @@
+from pcraster import *
+from pcraster.framework import *
+#HQ calculation by X Y Z W specie_ Script
+
+class MyFirstModel(DynamicModel):
+    def __init__(self):
+        DynamicModel.__init__(self)
+        setclone('distancesubbasin1.map')
+
+    def initial(self):
+        self.points = self.readmap('points')
+        self.PNECX=800 
+    
+    def dynamic(self):
+        ConcX = timeinputscalar('concX.tss',self.points)
+        self.report(ConcX,'concX')
+        ConcX = ifthen(self.points==1, ConcX)
+        HQX1 = (ConcX/self.PNECX)
+        self.report(HQX1,'HQX1')
+        
+        #MaxHQX2=mapmaximum('HQX2')
+        #self.report(maxHQX2,'maxHQX2')
+        #self.report(propHQ2,'propHQX2')
+        #map2col -M HQX2 HQX2.csv 
+        
+nrOfTimeSteps = 8
+myModel = MyFirstModel()
+dynamicModel = DynamicFramework(myModel, nrOfTimeSteps)
+dynamicModel.run()
+
+        
